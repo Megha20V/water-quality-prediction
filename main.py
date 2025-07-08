@@ -1,6 +1,7 @@
 # Import necessary libraries
 import pandas as pd # data manipulation
 import numpy as np # numerical python - linear algebra
+import joblib
 
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -38,4 +39,28 @@ for i, pollutant in enumerate(pollutants):
     print('   MSE:', mean_squared_error(y_test.iloc[:, i], y_pred[:, i]))
     print('   R2:', r2_score(y_test.iloc[:, i], y_pred[:, i]))
     print()
+
+station_id = '22'
+year_input = 2024
+
+input_data = pd.DataFrame({'year': [year_input], 'id': [station_id]})
+input_encoded = pd.get_dummies(input_data, columns=['id'])
+
+# Align with training feature columns
+missing_cols = set(X_encoded.columns) - set(input_encoded.columns)
+for col in missing_cols:
+    input_encoded[col] = 0
+input_encoded = input_encoded[X_encoded.columns]  # reorder columns
+
+# Predict pollutants
+predicted_pollutants = model.predict(input_encoded)[0]
+
+print(f"\nPredicted pollutant levels for station '{station_id}' in {year_input}:")
+for p, val in zip(pollutants, predicted_pollutants):
+    print(f"  {p}: {val:.2f}")
+
+
+joblib.dump(model, 'pollution_model.pkl')
+joblib.dump(X_encoded.columns.tolist(), "model_columns.pkl")
+print('Model and cols structure are saved!')
 
